@@ -2,7 +2,7 @@
    Keeps a copy of the app so it opens instantly and works offline.
    Bump VERSION whenever manifest.json or the icons change; index.html is
    checked against the website on every launch and refreshed by itself. */
-var VERSION = '3.2.0';
+var VERSION = '5.2.0';
 var CACHE = 'kitchen-run-studio-' + VERSION;
 var FONT_CACHE = 'kitchen-run-studio-fonts';
 var APP_FILES = [
@@ -14,7 +14,7 @@ var APP_FILES = [
   './icon-maskable-512.png',
   './apple-touch-icon.png'
 ];
-var FONT_CSS = 'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap';
+var FONT_CSS = 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,500..800&family=IBM+Plex+Sans+Condensed:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap';
 
 self.addEventListener('install', function(e){
   e.waitUntil(

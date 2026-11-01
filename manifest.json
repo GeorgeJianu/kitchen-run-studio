@@ -1,7 +1,7 @@
 {
   "name": "Kitchen Run Studio",
   "short_name": "Kitchen Run",
-  "description": "Plan a kitchen run, nest the parts onto sheets and get the cut list, cutting plan and order list.",
+  "description": "Planificator de mobilier: plan, estimare, listă de debitare și oferte de la meșteri.",
   "id": "./",
   "start_url": "./",
   "scope": "./",
@@ -9,7 +9,7 @@
   "orientation": "any",
   "background_color": "#EAEEEC",
   "theme_color": "#FFFFFF",
-  "lang": "en",
+  "lang": "ro",
   "categories": ["productivity", "utilities"],
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },

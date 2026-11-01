@@ -1,48 +1,41 @@
-# Kitchen Run Studio — installable app
+# Kitchen Run Studio
 
-The same Kitchen Run Studio, packaged so it installs on a phone, a tablet or a
-computer and works without internet.
+Live: **https://georgejianu.github.io/kitchen-run-studio/**
 
-What is in this folder
+A single-file furniture planner: lay cabinets along a wall or round a room, see them in 2D and 3D, get a cut list with sheet nesting, hardware and a priced estimate, and ask contractors for quotes. It installs as an app on a phone, a tablet or a computer and works offline.
 
-| File | What it does |
-|---|---|
-| `index.html` | The app itself (the same file as the claude.ai version) |
-| `manifest.json` | Name, icon and colours used when the app is installed |
-| `sw.js` | Keeps a copy of the app so it opens instantly and works offline |
-| `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png`, `icon.svg` | The app icons |
+| File | What it is |
+| --- | --- |
+| `index.html` | **Studio 5 (v5.2.0)** — the app the site serves. Romanian by default with an EN switch, RON + EUR, budget/premium tiers, no-overlap placement, start-screen furniture templates, paid-plans / contractor-quotes flow (prototype, simulated payments), phone layout with bottom tabs. |
+| `kitchen-run-studio.html` | **Studio 4 (v4.12.0)** — the English planner: Kastamonu Entegre decor catalogue by code, three buying modes (cut myself / pre-cut / cutting service), Excel export of the parts with grain direction. |
+| `manifest.json`, `sw.js`, `icon-*.png`, `icon.svg`, `apple-touch-icon.png` | What makes it installable and offline-capable. |
 
-Keep the files together in one folder, exactly as they are here.
+## Features
 
-## 1. Put it online — GitHub Pages, free, about 5 minutes
+- Wall runs and whole-room layouts with windows and doors; a kitchen wizard that proposes a layout.
+- Front, top and interactive 3D views (drag to turn, scroll or pinch to zoom, doors open/shut, dimensions).
+- Cabinet types: doors, drawers, combos, sinks, corners, oven housings, appliance spaces, open shelves, wine racks.
+- Cut list with edge banding per part, System 32 notes, guillotine sheet nesting with kerf and trim, stock/offcuts first.
+- Costing: board by sheet or by m², hardware price list, worktop, shop time; totals follow the chosen buying mode.
+- Kastamonu Entegre decorative-panel range (D/A/B codes) as finishes, searchable by code.
+- Excel (SheetJS) and CSV export, printable plans, project files.
 
-1. Create a free account at github.com if you do not have one.
-2. Click **New repository**, name it `kitchen-run-studio`, keep it **Public**, click **Create repository**.
-3. Click the **uploading an existing file** link, drag all the files of this folder onto the page, click **Commit changes**.
-4. Open **Settings → Pages**. Under *Branch* choose `main` and `/ (root)`, click **Save**.
-5. After a minute the same page shows your address:
-   `https://YOUR-NAME.github.io/kitchen-run-studio/`
+## Marketplace prototype (Studio 5)
 
-Cloudflare Pages and Netlify work the same way (drag the folder onto their deploy page) and are also free. Any host with **https** works.
+Roles are switchable in the app for demo purposes: a customer plans for free and sees the estimate; full plans are paid for or unlocked when a contractor's offer is accepted; the contractor sees the plans to quote, gets the customer's details only after acceptance, and pays the platform a commission. Payments and accounts are simulated in the browser — a real deployment needs a backend, authentication and a payment provider.
 
-## 2. Install it
+## Install it
 
 - **Android** — open the address in Chrome, menu ⋮ → **Add to Home screen** (or **Install app**).
 - **iPhone / iPad** — open the address in Safari, tap **Share** → **Add to Home Screen**.
-- **Windows / Mac** — open the address in Chrome or Edge, click the **install** icon at the right end of the address bar (or menu → **Install Kitchen Run Studio**).
+- **Windows / Mac** — open the address in Chrome or Edge, click the **install** icon at the right end of the address bar.
 
-The app then opens from its own icon, full screen, with or without internet. The settings drawer (⚙) has an **Install as an app** button on Android, Windows and Mac too.
+## Update it
 
-## 3. Update it later
-
-Upload the new `index.html` to the repository in place of the old one and commit. Installed copies notice the change the next time they start and show **A new version is ready — Reload**.
-
-If you change the icons or `manifest.json`, also change `VERSION` at the top of `sw.js`, so the installed copies refresh those files as well.
+Replace `index.html` and commit. Installed copies notice the change the next time they start and show **A new version is ready — Reload**. If the icons or `manifest.json` change, also bump `VERSION` at the top of `sw.js`.
 
 ## Good to know
 
-- **Projects stay on the device.** Each phone, tablet or computer keeps its own projects in its browser. To move a project between devices, share it, or keep a copy, use **Save project file** (Ctrl+S, the ↓ button) and **Open project file** (Ctrl+O, the folder button). Files are named `project-name.kitchen.json`; a file dropped anywhere on the page opens too.
-- **Uninstalling the app, or clearing the browser's site data, deletes the projects stored there.** Keep a project file of anything you care about.
-- **Fonts.** Outfit and JetBrains Mono are fetched from Google Fonts on the first visit and kept for offline use. For a public site in Switzerland or the EU you may prefer to host the two font files yourself (privacy) — download them, put them in a `fonts/` folder, and the stylesheet can be pointed at them.
-- **Printing.** From the installed app on Android, Windows and Mac, **Print** works as in the browser (choose *Save as PDF* for a file). On iPhone and iPad, if the print dialog does not open from the installed app, open the address in Safari and print from the Share menu.
+- **Projects stay on the device.** Each browser keeps its own projects. To move or back one up, use **Save project file** / **Open project file** (`.kitchen.json`); a file dropped on the page opens too.
+- **Clearing site data or uninstalling the app deletes the projects stored there.**
 - **Privacy.** Everything runs in the browser; no project data is sent anywhere. The website only serves these files.
