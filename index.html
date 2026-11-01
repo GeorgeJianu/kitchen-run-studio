@@ -912,7 +912,7 @@
         <rect x="2.5" y="1.5" width="27" height="3" fill="var(--tape)"/>
       </svg></span>
       <h1>Kitchen Run Studio</h1>
-      <span class="ver">v5.2.0</span>
+      <span class="ver">v5.3.0</span>
     </div>
     <input class="projname" id="projname" aria-label="Project name">
     <div class="readouts" id="readouts">
@@ -1182,7 +1182,7 @@
 
   var CUR = {RON:'lei', EUR:'€', CHF:'CHF', GBP:'£', USD:'$', PLN:'zł', HUF:'Ft', CZK:'Kč', SEK:'kr', NOK:'kr', DKK:'kr', CAD:'CA$', AUD:'A$'};
   var STORE_KEY = 'kitchen-run-bench-v1';
-  var APP_VERSION = '5.2.0';
+  var APP_VERSION = '5.3.0';
 
   /* ================= state ================= */
   var DEFAULT_STANDARDS = {
@@ -1225,7 +1225,9 @@
     hwAlt:{hinge:18, plate:4, runner:60, metaldrawer:230, handle:35, pin:0.3, cam:1.5, leg:5, clip:2, bracket:14, screw:0.15, tipout:260, susan:900},
     // the platform: what the plans cost on their own, and the share of an
     // accepted quote the contractor pays
-    planPrice:149, commission:5
+    planPrice:149, commission:5,
+    // where the buyer of the plans gets the material and the hardware: links the platform keeps
+    shop:{sheets:'', edging:'', hinges:'', runners:'', drawers:'', handles:'', accessories:''}
   };
   function tier(){ return state.settings.tier==='premium' ? 'premium' : 'budget'; }
   function tierLabel(t){ return (t||tier())==='premium' ? 'Premium' : 'Budget'; }
@@ -1700,6 +1702,18 @@
   // A single door hinges on the side you choose (left by default, so it opens
   // from the right); a pair always hinges on its outer edges.
   function hingeSide(u){ return (u.opts && u.opts.hinge)==='right' ? 'right' : 'left'; }
+  // A cupboard has 1, 2 or 4 doors: four stand in two rows of a pair, each
+  // row as tall as half the opening less the gap between the rows.
+  function doorGrid(u){
+    var n = Math.round(+(u.opts && u.opts.doorCount)||2);
+    if(n!==1 && n!==4) n = 2;
+    return {n:n, cols:n===1 ? 1 : 2, rows:n===4 ? 2 : 1};
+  }
+  // the size of one door in an opening w wide and h tall (gaps g all round and between)
+  function doorSize(u, w, h, g){
+    var d = doorGrid(u);
+    return {w: d.cols===1 ? w-2*g : (w-3*g)/2, h: d.rows===1 ? h-2*g : (h-3*g)/2, cols:d.cols, rows:d.rows, n:d.n};
+  }
   function singleDoor(u){
     var o = u.opts||{};
     if(u.type==='door' || u.type==='sink') return (o.doorCount||2)===1;
@@ -1902,18 +1916,14 @@
       }
     }
     if(cab.type==='door' && fronts){
-      var dc = cab.opts.doorCount||2;
-      var dH = H-2*g;
-      var dW = dc===1 ? (W-2*g) : ((W-3*g)/2);
-      parts.push(mkPart('Door', dc, dW, dH, T, ALL_ROUND, 'gap '+g+' mm all round'+(dc===1 ? ', hinged '+hingeSide(cab) : '')));
+      var ds = doorSize(cab, W, H, g);
+      parts.push(mkPart('Door', ds.n, ds.w, ds.h, T, ALL_ROUND, 'gap '+g+' mm all round'+(ds.n===1 ? ', hinged '+hingeSide(cab) : ds.rows===2 ? ', two rows of two' : '')));
     }
     if(cab.type==='sink' && fronts){
       var tray = K.sinkTrayHeight;
-      var dcS = cab.opts.doorCount||2;
-      var dHS = Math.max(H-2*g-tray-g, 100);
-      var dWS = dcS===1 ? (W-2*g) : ((W-3*g)/2);
+      var dsS = doorSize(cab, W, Math.max(H-tray-g, 100+2*g), g);
       parts.push(mkPart('Tip-out tray front', 1, W-2*g, tray, T, ALL_ROUND, 'gap '+g+' mm all round'));
-      parts.push(mkPart('Door', dcS, dWS, dHS, T, ALL_ROUND, 'gap '+g+' mm all round'+(dcS===1 ? ', hinged '+hingeSide(cab) : '')));
+      parts.push(mkPart('Door', dsS.n, dsS.w, dsS.h, T, ALL_ROUND, 'gap '+g+' mm all round'+(dsS.n===1 ? ', hinged '+hingeSide(cab) : dsS.rows===2 ? ', two rows of two' : '')));
     }
     return parts.concat(sidePanelParts(cab));
   }
@@ -2024,9 +2034,8 @@
 
     var doors = 0, dW = 0, dH = cab.H - 2*s.gap;
     if(cab.type==='door' || cab.type==='sink'){
-      doors = cab.opts.doorCount||2;
-      dW = doors===1 ? cab.W-2*s.gap : (cab.W-3*s.gap)/2;
-      if(cab.type==='sink') dH = Math.max(dH - K.sinkTrayHeight - s.gap, 100);
+      var dsH = doorSize(cab, cab.W, cab.type==='sink' ? Math.max(cab.H - K.sinkTrayHeight - s.gap, 100+2*s.gap) : cab.H, s.gap);
+      doors = dsH.n; dW = dsH.w; dH = dsH.h;
     }
     if(cab.type==='corner'){
       doors = 1;
@@ -2943,7 +2952,7 @@
         return Math.max(a, (u.D||0) + (Math.max(housingDoors(u),1)===1 ? u.W : u.W/2));
       }
       if(u.type!=='door' && u.type!=='sink' && !(u.type==='corner' && (u.opts.cornerStyle||'blind')!=='lazysusan')) return a;
-      var dc = u.type==='corner' ? 1 : (u.opts.doorCount||2);
+      var dc = u.type==='corner' ? 1 : doorGrid(u).cols;
       var dw = u.type==='corner' ? Math.min(Math.max(u.opts.doorWidth||450,200), Math.max(u.W-150,200)) : (dc===1 ? u.W : u.W/2);
       return Math.max(a, (u.D||0)+dw);
     }, 0);
@@ -3020,7 +3029,7 @@
         var yF = y0+d, dc, dw;
         if(buildOf(u)!=='carcass'){
           if(u.type==='door' || u.type==='sink'){
-            dc = u.opts.doorCount||2;
+            dc = doorGrid(u).cols;
             dw = dc===1 ? w-2*g1 : (w-3*g1)/2;
             if(dc===1){ if(hingeSide(u)==='left') swingArc(x+g1, yF, dw, +1); else swingArc(x+w-g1, yF, dw, -1); }
             else { swingArc(x+g1, yF, dw, +1); swingArc(x+w-g1, yF, dw, -1); }
@@ -3350,8 +3359,8 @@
         }
         if(u.type==='sink'){ drawerFront(o, x+G, top, zf, w-2*G, K.sinkTrayHeight, dec); top += K.sinkTrayHeight+G; avail -= K.sinkTrayHeight+G; }
         if(OPEN) return;
-        var dc = u.opts.doorCount||2, dw = dc===1 ? w-2*G : (w-2*G-G)/2;
-        for(var i=0;i<dc;i++) door(o, x+G+i*(dw+G), top, zf, dw, avail, dc===1 ? hingeSide(u)==='left' : i===0, u.level, dec);
+        var dg = doorSize(u, w, avail+2*G, G);
+        for(var r=0;r<dg.rows;r++) for(var i=0;i<dg.cols;i++) door(o, x+G+i*(dg.w+G), top+r*(dg.h+G), zf, dg.w, dg.h, dg.cols===1 ? hingeSide(u)==='left' : i===0, u.level, dec);
       } else if(u.type==='drawer' || u.type==='combo'){
         var nd = u.opts.drawerCount||2, zoneTop = y+G, zoneH = h-2*G;
         if(u.type==='combo'){
@@ -3411,8 +3420,8 @@
       if(u.type==='door' || u.type==='sink'){
         var top = y+G, avail = h-2*G;
         if(u.type==='sink'){ top += K.sinkTrayHeight+G; avail -= K.sinkTrayHeight+G; }
-        var dc = u.opts.doorCount||2, dw = dc===1 ? w-2*G : (w-2*G-G)/2;
-        for(var i=0;i<dc;i++) one(x+G+i*(dw+G), top, dw, avail, dc===1 ? hingeSide(u)==='left' : i===0);
+        var dg = doorSize(u, w, avail+2*G, G);
+        for(var r=0;r<dg.rows;r++) for(var i=0;i<dg.cols;i++) one(x+G+i*(dg.w+G), top+r*(dg.h+G), dg.w, dg.h, dg.cols===1 ? hingeSide(u)==='left' : i===0);
       } else if(u.type==='housing'){
         var dc3 = Math.max(housingDoors(u), 1);
         housingSections(u).forEach(function(sec){
@@ -3963,12 +3972,11 @@
           pull(x+R, top, w-2*R, K.sinkTrayHeight);
           top += K.sinkTrayHeight+G; avail -= K.sinkTrayHeight+G;
         }
-        var dc = u.opts.doorCount||2;
-        var dw = dc===1 ? w-2*R : (w-2*R-G)/2;
-        for(var i=0;i<dc;i++){
-          // a single door hinges on the side chosen for it; a pair on its outer edges
-          var hl1 = dc===1 ? hingeSide(u)==='left' : i===0, dx1 = x+R+i*(dw+G);
-          if(OPEN) openDoor(dx1, top, dw, avail, hl1); else hungDoor(dx1, top, dw, avail, hl1);
+        var dg = doorSize(u, w, avail+2*R, R);
+        for(var r=0;r<dg.rows;r++) for(var i=0;i<dg.cols;i++){
+          // a single door hinges on the side chosen for it; a pair on its outer edges; four are two pairs
+          var hl1 = dg.cols===1 ? hingeSide(u)==='left' : i===0, dx1 = x+R+i*(dg.w+G), dy1 = top+r*(dg.h+G);
+          if(OPEN) openDoor(dx1, dy1, dg.w, dg.h, hl1); else hungDoor(dx1, dy1, dg.w, dg.h, hl1);
         }
       } else if(u.type==='drawer' || u.type==='combo'){
         var n = u.opts.drawerCount||2;
@@ -4253,10 +4261,10 @@
       steps.push('Take the old drawer fronts off, transfer the handle and fixing holes to the new ones, and screw them to the boxes with the gaps set to '+state.settings.gap+' mm.');
     }
     if(fronts && (u.type==='door' || u.type==='sink' || (u.type==='corner' && !lazy))){
-      var hwx = hardwareFor(u), nd = (u.type==='corner') ? 1 : (u.opts.doorCount||2);
+      var hwx = hardwareFor(u), dsN = doorSize(u, u.W, u.H, state.settings.gap), nd = (u.type==='corner') ? 1 : dsN.n;
       var per = nd ? Math.round(hwx.hinge/nd) : 2;
-      var dh = Math.round(u.H-2*state.settings.gap);
-      var dwv = nd===1 ? u.W-2*state.settings.gap : (u.W-3*state.settings.gap)/2;
+      var dh = Math.round(u.type==='corner' ? u.H-2*state.settings.gap : dsN.h);
+      var dwv = u.type==='corner' ? u.W-2*state.settings.gap : dsN.w;
       var kg = doorWeightKg(dwv, dh, state.settings.thickness);
       steps.push('Bore 35 mm hinge cups 21.5 mm in from the door edge'+(nd===1 && u.type!=='corner' ? ' on the '+hingeSide(u)+'-hand side' : '')+', 100 mm from the top and bottom'+
         (per>2 ? ' with '+(per-2)+' more spaced evenly between — '+per+' per door, for a '+dh+' mm door of about '+kg.toFixed(1)+' kg' : '')+
@@ -4867,7 +4875,18 @@
     else if(k==='hall') o += '<rect x="6" y="5" width="16" height="40" fill="'+w+'" opacity=".3" stroke="'+ink+'"/><rect x="25" y="25" width="29" height="20" fill="'+w+'" opacity=".3" stroke="'+ink+'"/><rect x="25" y="8" width="29" height="12" fill="var(--paper)" stroke="'+ink+'"/>';
     return '<svg viewBox="0 0 60 50" aria-hidden="true">'+o+'</svg>';
   }
-  var startW = 2400;
+  var startW = 2400, startH = null, startD = null;
+  // the height and depth typed on the start screen, put on the piece's own
+  // cabinets: the tall ones of a wardrobe, the low ones of a TV unit; a wall
+  // shelf or a mirror cabinet keeps its size
+  function startSpec(units, level){
+    units.forEach(function(u){
+      if(u.level!==level) return;
+      if(startH>0) u.H = Math.round(startH);
+      if(startD>0) u.D = Math.round(startD);
+      if(u.type==='housing') housingRestack(u);
+    });
+  }
   function startCard(){
     return '<section class="card wizard" data-start><header><h2 style="flex:1">What are you planning?</h2>'+(state.runs.length ? '<button type="button" class="xbtn" data-act="start-toggle" title="Close">\u2715</button>' : '')+'</header>'+
       '<div class="body">'+
@@ -4875,9 +4894,11 @@
         '<div class="types" style="grid-template-columns:repeat(auto-fill,minmax(118px,1fr))">'+FURN.map(function(f){
           return '<button type="button" class="tbtn" data-act="start-pick" data-k="'+f.id+'" title="'+escAttr(f.note)+'">'+furnIcon(f.icon)+'<span>'+f.label+'</span></button>';
         }).join('')+'</div>'+
-        '<div class="pickrow" style="margin-top:12px"><div class="field" style="margin:0"><label>Width of the wall or the piece</label><div class="inrow"><input type="number" inputmode="decimal" data-start="W" value="'+startW+'" min="400" max="12000" step="10"><span class="unit">mm</span></div></div>'+
-          '<div class="field" style="margin:0"><label>Level</label><div class="seg mini"><button type="button" data-act="tier" data-t="budget"'+(tier()==='budget'?' class="on"':'')+'>Budget</button><button type="button" data-act="tier" data-t="premium"'+(tier()==='premium'?' class="on"':'')+'>Premium</button></div></div></div>'+
-        '<p class="hint" style="margin:10px 0 0">Measure the wall from corner to corner with a tape measure. The kitchen opens its own helper, which also places the sink under a window.</p>'+
+        '<div class="g3" style="margin-top:12px"><div class="field" style="margin:0"><label>Width</label><div class="inrow"><input type="number" inputmode="decimal" data-start="W" value="'+startW+'" min="400" max="12000" step="10"><span class="unit">mm</span></div></div>'+
+          '<div class="field" style="margin:0"><label>Height</label><div class="inrow"><input type="number" inputmode="decimal" data-start="H" value="'+(startH||'')+'" placeholder="auto" min="200" max="3000" step="10"><span class="unit">mm</span></div></div>'+
+          '<div class="field" style="margin:0"><label>Depth</label><div class="inrow"><input type="number" inputmode="decimal" data-start="D" value="'+(startD||'')+'" placeholder="auto" min="150" max="1000" step="10"><span class="unit">mm</span></div></div></div>'+
+        '<div class="pickrow" style="margin-top:10px"><div class="field" style="margin:0"><label>Level</label><div class="seg mini"><button type="button" data-act="tier" data-t="budget"'+(tier()==='budget'?' class="on"':'')+'>Budget</button><button type="button" data-act="tier" data-t="premium"'+(tier()==='premium'?' class="on"':'')+'>Premium</button></div></div></div>'+
+        '<p class="hint" style="margin:10px 0 0">Width is the wall or the piece from end to end; height and depth are the piece’s own, left on auto for the usual sizes. The kitchen sets its own heights and opens its helper, which also places the sink under a window.</p>'+
       '</div></section>';
   }
   // standard sizes that fill a width, the last taking what is left
@@ -4928,6 +4949,7 @@
       var tc = mk('door','tall',tallW,'Coat cupboard',{doorCount:1, shelfCount:2}); tc.D = 400; units.push(tc);
       if(W-tallW>=400){ var sc = mk('drawer','base',W-tallW,'Shoe cabinet',{drawerCount:2}); sc.H = 600; sc.D = 350; units.push(sc); }
     }
+    startSpec(units, (kind==='wardrobe' || kind==='bookcase' || kind==='hall') ? 'tall' : 'base');
     snapshot();
     var run = {id:uid(), name:name, wallLength:wallW, units:units, fillers:{bl:null, br:null, wl:null, wr:null, ul:null, ur:null}, ends:{bl:kind!=='blank', br:kind!=='blank', wl:false, wr:false, ul:false, ur:false}};
     if(kind==='blank'){ run.name = (lang==='ro' ? 'Peretele ' : 'Wall ')+String.fromCharCode(65+state.runs.length); }
@@ -4952,6 +4974,7 @@
           '<span data-fit>'+fitChip(run)+'</span>'+
           '<button type="button" class="xbtn" data-act="del-run" title="Remove run">✕</button>'+
         '</header>'+
+        '<div data-adder>'+adderHTML(run)+'</div>'+
         '<div class="elevwrap"><div data-elevs>'+runDrawings(run, maxLen)+'</div>'+
           '<div class="legend">'+
             '<span class="lg-front"><i style="background:var(--front);border-color:var(--front-line)"></i>Fronts, '+esc(decorName(decorFront()))+'</span>'+
@@ -4973,7 +4996,6 @@
         '<div data-notes>'+runNotes(run)+'</div>'+
         '<div data-units>'+(run.units.length ? '<div class="unitlist">'+run.units.map(unitRow).join('')+'</div>'
                           : '<div class="empty">Nothing on this wall yet.</div>')+'</div>'+
-        '<div data-adder>'+adderHTML(run)+'</div>'+
       '</section>';
     }).join('') +
     '<div class="btnrow"><button type="button" class="btn primary" data-act="add-run">+ Add a wall run</button>'+
@@ -5288,7 +5310,7 @@
     }).join('');
 
     var sheetSub = mode==='precut' ? c.precutArea.toFixed(2)+' m² cut to size' : mode==='service' ? c.sheetsToBuy+' sheets, cut and banded' : c.sheetsToBuy+' to buy';
-    return '<section class="card"><header><h2>Totals</h2><span class="sub">'+esc(s.project||'Project')+' · '+modeName(mode)+'</span>'+
+    return shopCard(c)+'<section class="card"><header><h2>Totals</h2><span class="sub">'+esc(s.project||'Project')+' · '+modeName(mode)+'</span>'+
         '<button type="button" class="btn sm ghost" data-act="copy" data-kind="order">Copy as spreadsheet</button>'+
         '<button type="button" class="btn sm ghost" data-act="print">Print</button></header>'+
       '<div class="body">'+compare+'<div class="tiles">'+
@@ -5320,6 +5342,34 @@
         '<tbody>'+units+'</tbody></table></div></section>';
   }
   function tile(k,v,s2){ return '<div class="tile"><span class="k">'+k+'</span><span class="v">'+v+'</span>'+(s2?'<span class="s">'+s2+'</span>':'')+'</div>'; }
+  /* ---------------- where to buy ----------------
+     The shopping list that comes with the plans: what the project needs of
+     each kind, at the platform's prices, and the platform's link to buy it.
+     Before the plans are yours it says only that the links come with them. */
+  function shopCard(c){
+    var s = state.settings, sh = s.shop||{}, hw = {};
+    c.hwRows.forEach(function(r){ hw[r.k] = r; });
+    function need(keys){ return keys.map(function(k){ return hw[k] ? hw[k].qty+' '+esc(hw[k].label) : ''; }).filter(Boolean).join(', '); }
+    var rows = [
+      ['sheets', 'Boards', c.mode==='precut' ? c.precutArea.toFixed(2)+' m² cut to size' : c.sheetsToBuy+' sheet'+(c.sheetsToBuy===1?'':'s')+': '+c.plan.map(function(g){ return (c.mode==='precut' ? '' : g.toBuy+' × ')+matLabel(g); }).join(', ')],
+      ['edging', 'Edge banding', c.edgeShown ? Math.ceil(c.edgeM)+' m, '+edgeDesc() : ''],
+      ['hinges', 'Hinges', need(['hinge','plate'])],
+      ['runners', 'Drawer runners', need(['runner'])],
+      ['drawers', 'Metal drawer systems', need(['metaldrawer'])],
+      ['handles', 'Handles', need(['handle'])],
+      ['accessories', 'Accessories', need(['leg','clip','bracket','pin','cam','tipout','susan'])]
+    ].filter(function(r){ return r[2]; });
+    if(!rows.length) return '';
+    var ok = plansAllowed();
+    var body = rows.map(function(r){
+      var link = ok && sh[r[0]] ? '<a class="btn sm" href="'+escAttr(sh[r[0]])+'" target="_blank" rel="noopener">Buy ↗</a>' : ok ? '<span class="hint" style="margin:0">no link yet</span>' : '<span class="chip">with the plans</span>';
+      return '<tr><td><b>'+r[1]+'</b></td><td>'+r[2]+'</td><td class="n">'+link+'</td></tr>';
+    }).join('');
+    return '<section class="card"><header><h2>Where to buy</h2><span class="sub">'+(ok ? 'at the prices in this estimate' : 'the links come with the plans')+'</span></header>'+
+      '<div class="tw"><table class="dt"><tbody>'+body+'</tbody></table></div>'+
+      (ok ? '' : '<div class="body tight"><p class="hint" style="margin:0">The platform sets every price in this estimate and has agreed shops for the boards, the banding and the fittings. Buy the plans, or take a contractor’s offer, and each line gets its link.</p></div>')+
+      '</section>';
+  }
 
   /* ---------------- bench view ---------------- */
   function renderBench(){
@@ -5426,7 +5476,7 @@
     }
     if(u.type==='shelf')  h += n('shelfCount','Shelves',o.shelfCount,0,20);
     if(u.type==='drawer') h += n('drawerCount','Drawers',o.drawerCount,1,12);
-    if(u.type==='door' || u.type==='sink') h += sel('doorCount','Doors',[{v:1,t:'1 single'},{v:2,t:'2 double'}], o.doorCount||2);
+    if(u.type==='door' || u.type==='sink') h += sel('doorCount','Doors',[{v:1,t:'1 single'},{v:2,t:'2 double'},{v:4,t:'4, in two rows'}], doorGrid(u).n);
     if(u.type==='door') h += n('shelfCount','Shelves inside',doorShelves(u),0,12);
     if(u.type==='combo')  h += n('drawerZone','Zone mm',o.drawerZone,100,2000)+n('drawerCount','Drawers',o.drawerCount,1,8)+n('shelfCount','Shelves',o.shelfCount,0,10);
     if(u.type==='wine')   h += n('wineRows','Rows',o.wineRows,1,20);
@@ -6170,7 +6220,48 @@
         '</select></div></div>';
     }).join('');
 
+    // prices belong to the platform: a customer picks the level and how the
+    // board is bought, and sees the figures those give; only the platform
+    // role edits the price lists and the shop links
+    var admin = role()==='platform';
+    var SHOP_ROWS = [['sheets','Boards (sheets)'],['edging','Edge banding'],['hinges','Hinges'],['runners','Drawer runners'],['drawers','Metal drawer systems'],['handles','Handles'],['accessories','Accessories']];
+    var shopEd = SHOP_ROWS.map(function(r){ return '<div class="field"><label>'+r[1]+'</label><input type="text" data-shop="'+r[0]+'" value="'+escAttr((s.shop||{})[r[0]]||'')+'" placeholder="https://…" autocomplete="off" spellcheck="false"></div>'; }).join('');
+    if(!admin){
+      body.innerHTML = appearanceRow()+
+        grp('stock', 'Boards &amp; prices',
+          modeBlock+
+          '<p class="hint">The prices of the boards, the banding and the fittings are set by the platform for the '+tierLabel()+' level; the estimate follows them. With the plans you get the links to buy everything at those prices.</p>'+
+          '<div class="g2" style="margin-top:4px">'+nf('thickness','Carcass board', s.thickness,'mm',1,80,0.1)+nf('back','Back panel', s.back,'mm',1,80,0.1)+'</div>'+
+          '<div id="thick-notes">'+thickWarn(s.thickness,'the carcass is')+thickWarn(s.back,'the back panel is')+'</div>')+
+        grp('cutting', 'Cutting &amp; fronts',
+          nf('gap','Gap around fronts', s.gap,'mm',0,20,0.5)+
+          '<div class="field"><label>Grain direction</label><select data-set="grain">'+
+            '<option value="decor"'+(s.grain==='decor'?' selected':'')+'>On wood and stone decors; plain colours may turn</option>'+
+            '<option value="length"'+(s.grain==='length'?' selected':'')+'>On every board: grain kept on every part</option>'+
+            '<option value="free"'+(s.grain==='free'?' selected':'')+'>Never: parts may turn to fit</option>'+
+          '</select></div>'+
+          '<p class="hint">Banding: '+edgeDesc()+' — the '+tierLabel()+' level sets it.</p>')+
+        grp('standards', 'Kitchen standards',
+          '<div class="g2">'+nf('std:plinth','Plinth', S.plinth,'mm',0,400)+nf('std:baseH','Base height', S.baseH,'mm',200,1200)+'</div>'+
+          '<div class="g2">'+nf('std:baseD','Base depth', S.baseD,'mm',200,900)+nf('std:worktopT','Worktop thk', S.worktopT,'mm',10,120)+'</div>'+
+          '<div class="g2">'+nf('std:wallH','Wall height', S.wallH,'mm',200,1400,10)+nf('std:wallD','Wall depth', S.wallD,'mm',150,600,10)+'</div>'+
+          '<div class="g2">'+nf('std:tallH','Tall height', S.tallH,'mm',1000,2600,10)+nf('std:tallD','Tall depth', S.tallD,'mm',200,900,10)+'</div>'+
+          '<div class="g2">'+nf('std:splash','Splashback', S.splash,'mm',200,1000,10)+nf('std:ceiling','Ceiling', S.ceiling,'mm',1800,4000,10)+'</div>')+
+        grp('finish', 'Finishes',
+          '<p class="hint" style="margin-top:0">The plain colours and the whole Kastamonu Entegre decorative-panel range, by code.</p>'+
+          '<div data-dphost>'+finishPicker()+'</div>')+
+        grp('extras', 'Worktop',
+          sw('worktopOn','Worktop','Drawn over the base units and costed', s.worktopOn)+
+          '<p class="hint" style="margin-bottom:0">The currency is set beside the estimate at the top of the page.</p>')+
+        grp('how', 'How it calculates', '<p class="hint" style="margin:0">'+assumptions()+'</p>')+
+        appGroup();
+      body.scrollTop = top;
+      if(refocus){ var nf3 = body.querySelector(refocus); if(nf3 && nf3.focus) nf3.focus({preventScroll:true}); }
+      return;
+    }
     body.innerHTML = appearanceRow()+
+      grp('shop', 'Where to buy (platform)',
+        '<p class="hint" style="margin-top:0">The links a buyer of the plans gets, one per kind of thing. Leave one empty to hide it.</p>'+shopEd)+
       grp('stock', 'Boards, stock &amp; prices',
         modeBlock+
         '<p class="hint">Rows with a quantity are stock you already own — offcuts included. They are nested first, smallest first, before anything is bought.</p>'+
@@ -6349,6 +6440,7 @@
   // one delegated handler for every value in the app
   function onInput(e){
     var el = e.target;
+    if(el.hasAttribute && el.hasAttribute('data-shop')){ state.settings.shop = state.settings.shop||{}; state.settings.shop[el.getAttribute('data-shop')] = el.value.trim(); save(); return; }
     if(el.closest && el.closest('[data-quotes]')){ qInput(e); return; }
     if(e.type==='change' && el.tagName!=='SELECT' && el.type!=='checkbox') return;
     var a;
@@ -6415,7 +6507,11 @@
       else { var opv = numOf(el); if(opv===null) return; opn[opp[1]] = opv; }
       touch(); return;
     }
-    if(el.getAttribute('data-start')==='W'){ var swv = numOf(el); if(swv!==null) startW = swv; return; }
+    if(el.hasAttribute('data-start')){
+      var sk = el.getAttribute('data-start'), swv = numOf(el);
+      if(sk==='W'){ if(swv!==null) startW = swv; } else if(sk==='H') startH = swv; else if(sk==='D') startD = swv;
+      return;
+    }
     if((a = el.getAttribute('data-wiz'))){
       WIZ[a] = (el.type==='checkbox') ? el.checked : el.value; return;
     }
@@ -7894,7 +7990,7 @@
       '<div class="btnrow" style="justify-content:center"><button type="button" class="btn primary" data-qact="go" data-step="3">Go to the requests</button></div>';
     else inner = '<p>Your drawings and the estimate are free. The '+what+' is part of the plans, which you can have in one of two ways:</p>'+
       '<div class="q-choices" style="text-align:left;max-width:720px;margin:14px auto 0">'+
-        '<div class="q-choice" style="cursor:default;display:block"><b>Buy the plans</b><small>The cut list, the drawings and the Excel of the parts, to build it or have it built anywhere. '+money0(s.planPrice||0)+', once.</small>'+
+        '<div class="q-choice" style="cursor:default;display:block"><b>Buy the plans</b><small>The cut list, the drawings, the Excel of the parts and the links to buy the boards, hinges, runners and accessories at the prices in the estimate. '+money0(s.planPrice||0)+', once.</small>'+
           '<div class="btnrow" style="margin-top:10px"><button type="button" class="btn primary" data-qact="checkout">Buy the plans for '+money0(s.planPrice||0)+'</button></div></div>'+
         '<div class="q-choice" style="cursor:default;display:block"><b>Ask contractors for quotes</b><small>Free. Contractors near you price the plans; when you take an offer, you and the contractor both get the full plans.</small>'+
           '<div class="btnrow" style="margin-top:10px"><button type="button" class="btn" data-qact="go" data-step="'+(Q.sent ? 3 : 2)+'">'+(Q.sent ? 'See the requests' : 'Request quotes')+'</button></div></div>'+
@@ -7907,7 +8003,7 @@
     return '<section class="card" data-quotes><header><h2>Buy the plans</h2><span class="sub">simulated payment</span></header>'+
       '<div class="body"><div class="tiles" style="margin-bottom:12px">'+
         tile('The plans', money0(s.planPrice||0), 'once, for this project')+
-        tile('You get', 'Cut list, drawings, Excel', 'and every later change to them')+
+        tile('You get', 'Cut list, drawings, Excel', 'and the links to buy everything')+
       '</div>'+
       '<div class="note info">A real site would take the card here (Stripe, Netopia). Nothing is charged in this prototype.</div>'+
       '<div class="q-g"><div class="field"><label>Name on the card</label><input type="text" value="" placeholder="Ana Popescu" autocomplete="off"></div>'+
@@ -8264,6 +8360,12 @@
     [/^(\d+)% of (.*) = (.*)$/, '$1% din $2 = $3']
   ];
   (function(extra){ Object.keys(extra).forEach(function(k){ RO[k] = extra[k]; }); })({
+    'Where to buy':'De unde cumperi', 'Where to buy (platform)':'De unde cumperi (platformă)', 'at the prices in this estimate':'la prețurile din această estimare', 'the links come with the plans':'linkurile vin odată cu planurile',
+    'Buy ↗':'Cumpără ↗', 'no link yet':'încă fără link', 'with the plans':'odată cu planurile', 'Boards':'Plăci', 'Boards (sheets)':'Plăci (coli)', 'Hinges':'Balamale', 'Drawer runners':'Glisiere', 'Metal drawer systems':'Sertare metalice', 'Handles':'Mânere', 'Accessories':'Accesorii',
+    'The links a buyer of the plans gets, one per kind of thing. Leave one empty to hide it.':'Linkurile pe care le primește cumpărătorul planurilor, câte unul pe categorie. Lasă unul gol ca să-l ascunzi.',
+    'The platform sets every price in this estimate and has agreed shops for the boards, the banding and the fittings. Buy the plans, or take a contractor’s offer, and each line gets its link.':'Platforma stabilește toate prețurile din estimare și are magazine agreate pentru plăci, cant și feronerie. Cumpără planurile sau acceptă oferta unui meșter și fiecare rând primește linkul său.',
+    'Boards &amp; prices':'Plăci și prețuri', 'Height':'Înălțime', 'Depth':'Adâncime', 'Width':'Lățime', '4, in two rows':'4, pe două rânduri', 'two rows of two':'două rânduri a câte două',
+    'Width is the wall or the piece from end to end; height and depth are the piece’s own, left on auto for the usual sizes. The kitchen sets its own heights and opens its helper, which also places the sink under a window.':'Lățimea este peretele sau mobila de la un capăt la altul; înălțimea și adâncimea sunt ale piesei, lăsate pe auto pentru dimensiunile obișnuite. Bucătăria își stabilește singură înălțimile și își deschide asistentul, care pune și chiuveta sub fereastră.',
     'Cost':'Cost', 'Account':'Cont', 'Language':'Limba', 'Theme':'Temă', 'Print':'Tipărește', 'Views':'Vederi', 'More':'Mai multe',
     'Save project file':'Salvează fișierul proiectului', 'Open project file':'Deschide un proiect', 'Taller or shorter':'Mai înalt sau mai scund', '10 mm less':'10 mm mai puțin', '10 mm more':'10 mm mai mult',
     'What':'Ce', 'Amount':'Sumă', 'Plans bought by the customer':'Planuri cumpărate de client', 'Paid (simulated). The cut list, the drawings and the Excel are yours.':'Plătit (simulat). Lista de debitare, desenele și Excelul sunt ale tale.',

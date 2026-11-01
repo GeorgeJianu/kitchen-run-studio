@@ -1,4 +1,4 @@
-# Kitchen Run Studio
+﻿# Kitchen Run Studio
 
 Live: **https://georgejianu.github.io/kitchen-run-studio/**
 
@@ -6,8 +6,8 @@ A single-file furniture planner: lay cabinets along a wall or round a room, see 
 
 | File | What it is |
 | --- | --- |
-| `index.html` | **Studio 5 (v5.2.0)** — the app the site serves. Romanian by default with an EN switch, RON + EUR, budget/premium tiers, no-overlap placement, start-screen furniture templates, paid-plans / contractor-quotes flow (prototype, simulated payments), phone layout with bottom tabs. |
-| `kitchen-run-studio.html` | **Studio 4 (v4.12.0)** — the English planner: Kastamonu Entegre decor catalogue by code, three buying modes (cut myself / pre-cut / cutting service), Excel export of the parts with grain direction. |
+| `index.html` | **Studio 5 (v5.3.0)** â€” the app the site serves. Romanian by default with an EN switch, RON + EUR, budget/premium tiers, no-overlap placement, start-screen furniture templates, paid-plans / contractor-quotes flow (prototype, simulated payments), phone layout with bottom tabs. |
+| `kitchen-run-studio.html` | **Studio 4 (v4.12.0)** â€” the English planner: Kastamonu Entegre decor catalogue by code, three buying modes (cut myself / pre-cut / cutting service), Excel export of the parts with grain direction. |
 | `manifest.json`, `sw.js`, `icon-*.png`, `icon.svg`, `apple-touch-icon.png` | What makes it installable and offline-capable. |
 
 ## Features
@@ -16,23 +16,23 @@ A single-file furniture planner: lay cabinets along a wall or round a room, see 
 - Front, top and interactive 3D views (drag to turn, scroll or pinch to zoom, doors open/shut, dimensions).
 - Cabinet types: doors, drawers, combos, sinks, corners, oven housings, appliance spaces, open shelves, wine racks.
 - Cut list with edge banding per part, System 32 notes, guillotine sheet nesting with kerf and trim, stock/offcuts first.
-- Costing: board by sheet or by m², hardware price list, worktop, shop time; totals follow the chosen buying mode.
+- Costing: board by sheet or by mÂ², hardware price list, worktop, shop time; totals follow the chosen buying mode.
 - Kastamonu Entegre decorative-panel range (D/A/B codes) as finishes, searchable by code.
 - Excel (SheetJS) and CSV export, printable plans, project files.
 
 ## Marketplace prototype (Studio 5)
 
-Roles are switchable in the app for demo purposes: a customer plans for free and sees the estimate; full plans are paid for or unlocked when a contractor's offer is accepted; the contractor sees the plans to quote, gets the customer's details only after acceptance, and pays the platform a commission. Payments and accounts are simulated in the browser — a real deployment needs a backend, authentication and a payment provider.
+Roles are switchable in the app for demo purposes: a customer plans for free and sees the estimate; full plans are paid for or unlocked when a contractor's offer is accepted; the contractor sees the plans to quote, gets the customer's details only after acceptance, and pays the platform a commission. Payments and accounts are simulated in the browser â€” a real deployment needs a backend, authentication and a payment provider.
 
 ## Install it
 
-- **Android** — open the address in Chrome, menu ⋮ → **Add to Home screen** (or **Install app**).
-- **iPhone / iPad** — open the address in Safari, tap **Share** → **Add to Home Screen**.
-- **Windows / Mac** — open the address in Chrome or Edge, click the **install** icon at the right end of the address bar.
+- **Android** â€” open the address in Chrome, menu â‹® â†’ **Add to Home screen** (or **Install app**).
+- **iPhone / iPad** â€” open the address in Safari, tap **Share** â†’ **Add to Home Screen**.
+- **Windows / Mac** â€” open the address in Chrome or Edge, click the **install** icon at the right end of the address bar.
 
 ## Update it
 
-Replace `index.html` and commit. Installed copies notice the change the next time they start and show **A new version is ready — Reload**. If the icons or `manifest.json` change, also bump `VERSION` at the top of `sw.js`.
+Replace `index.html` and commit. Installed copies notice the change the next time they start and show **A new version is ready â€” Reload**. If the icons or `manifest.json` change, also bump `VERSION` at the top of `sw.js`.
 
 ## Good to know
 
